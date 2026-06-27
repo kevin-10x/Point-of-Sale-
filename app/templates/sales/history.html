@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Sales History{% endblock %}
+{% block page_title %}Sales History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Sales History</h1>
+  <p class="page-subtitle">All completed transactions</p>
+</div>
+
+<div class="glass-card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Date</th>
+          <th>Cashier</th>
+          <th>Payment</th>
+          <th>Revenue</th>
+          <th>Profit</th>
+          <th>Margin</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr>
+          <td style="font-weight:600; color:var(--neon-blue);">#{{ s.id }}</td>
+          <td style="color:var(--text-secondary); font-size:0.82rem;">{{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ s.cashier.username }}</td>
+          <td>
+            <span class="badge {% if s.payment_method == 'mpesa' %}bg-success{% elif s.payment_method == 'card' %}bg-primary{% else %}bg-secondary{% endif %}">
+              {{ s.payment_method }}
+            </span>
+          </td>
+          <td style="font-family:'Space Grotesk',sans-serif; font-weight:600;">
+            KSh {{ "{:,.0f}".format(s.total_amount) }}
+          </td>
+          <td style="color:var(--neon-green); font-weight:600;">KSh {{ "{:,.0f}".format(s.total_profit) }}</td>
+          <td style="color:var(--text-muted);">{{ "{:.1f}".format(s.profit_margin) }}%</td>
+          <td>
+            <a href="{{ url_for('sales.receipt', sale_id=s.id) }}" class="btn btn-sm btn-outline-primary">Receipt</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" style="text-align:center; color:var(--text-muted); padding:3rem;">
+            No sales recorded yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

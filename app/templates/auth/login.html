@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+{% block main_class %}auth-bg{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+  <div class="text-center mb-4">
+    <div class="auth-logo">⚡ Nexus POS</div>
+    <p class="auth-tagline">Sign in to your shop dashboard</p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} mb-3">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+      {{ form.username.label(class="form-label") }}
+      {{ form.username(class="form-control", placeholder="Enter your username", autofocus=true) }}
+    </div>
+    <div class="mb-4">
+      {{ form.password.label(class="form-label") }}
+      {{ form.password(class="form-control", placeholder="Enter your password") }}
+    </div>
+    <button type="submit" class="btn btn-primary w-100 btn-lg">Sign In</button>
+  </form>
+
+  <p class="text-center mt-4 mb-0" style="font-size:0.85rem; color: var(--text-muted);">
+    New business?
+    <a href="{{ url_for('auth.register') }}" style="color: var(--neon-blue);">Register your shop →</a>
+  </p>
+</div>
+{% endblock %}

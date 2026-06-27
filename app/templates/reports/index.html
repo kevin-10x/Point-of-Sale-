@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+{% block topbar_action %}
+  <a href="{{ url_for('reports.export_csv', start=start.strftime('%Y-%m-%d'), end=end.strftime('%Y-%m-%d')) }}"
+     class="btn btn-outline-secondary btn-sm">↓ Export CSV</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+  <div>
+    <h1 class="page-title">Reports & Profit</h1>
+    <p class="page-subtitle">{{ start.strftime('%d %b %Y') }} – {{ end.strftime('%d %b %Y') }}</p>
+  </div>
+  <form class="d-flex gap-2 align-items-end" method="get">
+    <div>
+      <label class="form-label" style="font-size:0.7rem;">From</label>
+      <input type="date" name="start" class="form-control form-control-sm" value="{{ start.strftime('%Y-%m-%d') }}">
+    </div>
+    <div>
+      <label class="form-label" style="font-size:0.7rem;">To</label>
+      <input type="date" name="end" class="form-control form-control-sm" value="{{ end.strftime('%Y-%m-%d') }}">
+    </div>
+    <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+  </form>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card blue">
+      <div class="stat-icon blue">💰</div>
+      <div class="stat-label">Revenue</div>
+      <div class="stat-value">KSh {{ "{:,.0f}".format(stats.revenue) }}</div>
+      <div class="stat-sub">{{ stats.count }} transactions</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card orange">
+      <div class="stat-icon orange">🏷️</div>
+      <div class="stat-label">Cost of Goods</div>
+      <div class="stat-value">KSh {{ "{:,.0f}".format(stats.cost) }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card green">
+      <div class="stat-icon green">📈</div>
+      <div class="stat-label">Gross Profit</div>
+      <div class="stat-value" style="color:var(--neon-green);">KSh {{ "{:,.0f}".format(stats.profit) }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card purple">
+      <div class="stat-icon purple">%</div>
+      <div class="stat-label">Gross Margin</div>
+      <div class="stat-value">{{ "{:.1f}".format(stats.margin) }}%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="glass-card">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem;">Revenue & Profit by Day</span>
+      </div>
+      <div class="card-body chart-container">
+        <canvas id="salesChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="glass-card h-100">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem;">Payment Methods</span>
+      </div>
+      <div class="card-body">
+        {% for method, amount in payment_stats.items() %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span style="font-size:0.875rem;">
+            {% if method == 'mpesa' %}📱{% elif method == 'card' %}💳{% else %}💵{% endif %}
+            {{ method|upper }}
+          </span>
+          <strong style="font-family:'Space Grotesk',sans-serif;">KSh {{ "{:,.0f}".format(amount) }}</strong>
+        </div>
+        {% else %}
+        <p style="color:var(--text-muted); font-size:0.85rem;">No data available.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Tables -->
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="glass-card">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem;">🏆 Best Selling Products</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Product</th><th>Qty</th><th>Revenue</th><th>Profit</th></tr></thead>
+          <tbody>
+            {% for p in top_products %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.quantity }}</td>
+              <td>KSh {{ "{:,.0f}".format(p.revenue) }}</td>
+              <td style="color:var(--neon-green);">KSh {{ "{:,.0f}".format(p.profit) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:2rem;">No sales in period</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="glass-card">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem;">💎 Most Profitable Products</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Product</th><th>Profit</th><th>Revenue</th></tr></thead>
+          <tbody>
+            {% for p in top_profit_products %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td style="color:var(--neon-green); font-weight:600;">KSh {{ "{:,.0f}".format(p.profit) }}</td>
+              <td>KSh {{ "{:,.0f}".format(p.revenue) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">No sales in period</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  const labels = {{ chart_labels | tojson }};
+  const revenue = {{ chart_revenue | tojson }};
+  const profit = {{ chart_profit | tojson }};
+
+  Chart.defaults.color = '#8899bb';
+  Chart.defaults.borderColor = 'rgba(99, 179, 237, 0.1)';
+
+  if (labels.length > 0) {
+    new Chart(document.getElementById('salesChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Revenue (KSh)',
+            data: revenue,
+            backgroundColor: 'rgba(79, 163, 255, 0.6)',
+            borderColor: 'rgba(79, 163, 255, 0.9)',
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+          {
+            label: 'Profit (KSh)',
+            data: profit,
+            backgroundColor: 'rgba(0, 255, 157, 0.5)',
+            borderColor: 'rgba(0, 255, 157, 0.8)',
+            borderWidth: 1,
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: '#8899bb', font: { family: 'Inter' } } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(99, 179, 237, 0.08)' },
+            ticks: { color: '#556080' }
+          },
+          x: {
+            grid: { color: 'rgba(99, 179, 237, 0.05)' },
+            ticks: { color: '#556080' }
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

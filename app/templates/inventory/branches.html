@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Branches{% endblock %}
+{% block page_title %}Branches{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Branches</h1>
+  <p class="page-subtitle">Manage your shop locations</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="glass-card">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem;">Add Branch</span>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('inventory.add_branch') }}">
+          {{ form.hidden_tag() }}
+          <div class="mb-2">
+            <label class="form-label">Branch Name</label>
+            {{ form.name(class="form-control", placeholder="e.g. Main Branch") }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Address</label>
+            {{ form.address(class="form-control", placeholder="Branch address") }}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Add Branch</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="glass-card">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Name</th><th>Address</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for b in branches %}
+            <tr>
+              <td class="fw-medium">{{ b.name }}</td>
+              <td style="color:var(--text-secondary);">{{ b.address or '—' }}</td>
+              <td>
+                {% if b.is_active %}
+                <span class="badge bg-success">Active</span>
+                {% else %}
+                <span class="badge bg-danger">Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" style="text-align:center; color:var(--text-muted); padding:3rem;">
+                No branches added yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

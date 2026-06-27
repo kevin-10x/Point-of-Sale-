@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Receipt #{{ sale.id }}{% endblock %}
+{% block page_title %}Receipt{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+  .sidebar, .topbar, .no-print, .app-layout > .app-main > .topbar { display: none !important; }
+  .with-sidebar .app-main { margin-left: 0 !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .receipt-wrapper { max-width: 100% !important; }
+  .glass-card { box-shadow: none !important; border: none !important; background: #fff !important; }
+  .page-content { padding: 0 !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5 receipt-wrapper">
+    <div class="glass-card receipt-card mb-3" id="receipt">
+      <div class="receipt-header">
+        <div class="receipt-shop-name">{{ shop.name }}</div>
+        {% if shop.address %}
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">{{ shop.address }}</div>
+        {% endif %}
+        {% if shop.phone %}
+        <div style="font-size:0.8rem; color:var(--text-muted);">{{ shop.phone }}</div>
+        {% endif %}
+      </div>
+
+      <div class="card-body">
+        <div style="text-align:center; margin-bottom:1rem;">
+          <span style="font-size:0.78rem; color:var(--text-muted);">
+            Receipt #{{ sale.id }} &nbsp;·&nbsp; {{ sale.created_at.strftime('%d %b %Y %H:%M') }}
+          </span>
+        </div>
+
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for item in sale.items %}
+            <tr>
+              <td style="border:none; padding:0.4rem 0; color:var(--text-primary);">
+                {{ item.product.name if item.product else 'Item' }}
+                <span style="color:var(--text-muted);">×{{ item.quantity }}</span>
+              </td>
+              <td style="border:none; padding:0.4rem 0; text-align:right; font-family:'Space Grotesk',sans-serif; font-weight:600;">
+                KSh {{ "{:,.0f}".format(item.subtotal) }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <hr class="receipt-divider">
+
+        {% if sale.discount_amount > 0 %}
+        <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem; color:var(--text-muted);">
+          <span>Discount</span>
+          <span style="color:var(--neon-pink);">- KSh {{ "{:,.0f}".format(sale.discount_amount) }}</span>
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+          <span style="font-weight:700; font-size:1rem;">TOTAL</span>
+          <span style="font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:800; color:var(--text-primary);">
+            KSh {{ "{:,.0f}".format(sale.total_amount) }}
+          </span>
+        </div>
+
+        <div style="font-size:0.8rem; color:var(--text-muted); text-align:center;">
+          Payment: <strong style="color:var(--text-secondary);">{{ sale.payment_method|upper }}</strong>
+          {% if sale.mpesa_receipt_number %}
+          &nbsp;·&nbsp; Ref: <strong>{{ sale.mpesa_receipt_number }}</strong>
+          {% endif %}
+        </div>
+        <div style="font-size:0.78rem; color:var(--text-muted); text-align:center; margin-top:4px;">
+          Cashier: {{ sale.cashier.username }}
+        </div>
+
+        <hr class="receipt-divider">
+
+        <p style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin:0;">
+          Thank you for shopping with us! 🙏
+        </p>
+      </div>
+    </div>
+
+    <div class="d-grid gap-2 no-print">
+      <button class="btn btn-primary btn-lg" onclick="window.print()">🖨️ Print Receipt</button>
+      <a href="{{ url_for('sales.index') }}" class="btn btn-outline-primary">New Sale</a>
+      <a href="{{ url_for('dashboard.home') }}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

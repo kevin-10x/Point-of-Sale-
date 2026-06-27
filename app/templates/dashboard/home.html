@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_action %}
+  <a href="{{ url_for('sales.index') }}" class="btn btn-primary btn-sm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    New Sale
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Good day 👋</h1>
+  <p class="page-subtitle">{{ shop.name }} — real-time overview</p>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card blue">
+      <div class="stat-icon blue">💰</div>
+      <div class="stat-label">Today's Revenue</div>
+      <div class="stat-value">KSh {{ "{:,.0f}".format(today_stats.revenue) }}</div>
+      <div class="stat-sub positive">Profit: KSh {{ "{:,.0f}".format(today_stats.profit) }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card green">
+      <div class="stat-icon green">📈</div>
+      <div class="stat-label">Today's Margin</div>
+      <div class="stat-value">{{ "{:.1f}".format(today_stats.margin) }}%</div>
+      <div class="stat-sub">{{ today_stats.count }} sales today</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card purple">
+      <div class="stat-icon purple">📊</div>
+      <div class="stat-label">This Week</div>
+      <div class="stat-value">KSh {{ "{:,.0f}".format(week_stats.revenue) }}</div>
+      <div class="stat-sub positive">Profit: KSh {{ "{:,.0f}".format(week_stats.profit) }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card orange">
+      <div class="stat-icon orange">🗓️</div>
+      <div class="stat-label">This Month</div>
+      <div class="stat-value">KSh {{ "{:,.0f}".format(month_stats.revenue) }}</div>
+      <div class="stat-sub positive">Profit: KSh {{ "{:,.0f}".format(month_stats.profit) }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="glass-card h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span style="color: var(--neon-orange);">⚠️</span>
+        <span style="font-weight:600; font-size:0.875rem;">Low Stock Alerts</span>
+      </div>
+      {% if low_stock %}
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Product</th><th>Stock</th><th>Threshold</th></tr></thead>
+          <tbody>
+            {% for p in low_stock %}
+            <tr>
+              <td class="fw-medium">{{ p.name }}</td>
+              <td><span class="badge bg-warning">{{ p.stock_quantity }}</span></td>
+              <td style="color: var(--text-muted);">{{ p.low_stock_threshold }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+          ✅ All products are above low-stock threshold.
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="glass-card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <span style="color: var(--neon-blue);">🧾</span>
+          <span style="font-weight:600; font-size:0.875rem;">Recent Sales</span>
+        </div>
+        <a href="{{ url_for('sales.history') }}" style="font-size:0.78rem; color: var(--neon-blue);">View all →</a>
+      </div>
+      {% if recent_sales %}
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>ID</th><th>Amount</th><th>Profit</th><th>Time</th></tr></thead>
+          <tbody>
+            {% for s in recent_sales %}
+            <tr>
+              <td>
+                <a href="{{ url_for('sales.receipt', sale_id=s.id) }}"
+                   style="color: var(--neon-blue); font-weight:600;">#{{ s.id }}</a>
+              </td>
+              <td>KSh {{ "{:,.0f}".format(s.total_amount) }}</td>
+              <td style="color: var(--neon-green);">KSh {{ "{:,.0f}".format(s.total_profit) }}</td>
+              <td style="color: var(--text-muted); font-size:0.8rem;">{{ s.created_at.strftime('%H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+          No sales yet. <a href="{{ url_for('sales.index') }}" style="color:var(--neon-blue);">Start your first sale →</a>
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

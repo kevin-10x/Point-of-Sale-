@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}M-Pesa Payment{% endblock %}
+{% block page_title %}M-Pesa Payment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center" style="margin-top:2rem;">
+  <div class="col-md-5">
+    <div class="glass-card text-center">
+      <div class="card-body" style="padding:3rem 2rem;">
+        <div class="mpesa-spinner mb-3">
+          <span style="font-size:1.5rem;">📱</span>
+        </div>
+        <h1 style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:700; margin-bottom:0.5rem;">
+          STK Push Sent
+        </h1>
+        <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:1.5rem;">
+          Ask the customer to enter their M-Pesa PIN on<br>
+          <strong style="color:var(--text-primary);">{{ payment.phone_number }}</strong>
+        </p>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
+          KSh {{ "{:,.0f}".format(payment.amount) }}
+        </div>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:2rem;">Payment #{{ payment.id }}</p>
+
+        <div id="statusBox" class="alert alert-info">
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          Waiting for payment confirmation…
+        </div>
+        <a href="{{ url_for('sales.index') }}" class="btn btn-outline-secondary mt-2" id="backLink" style="display:none;">
+          ← Back to Sales
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/mpesa_pending.js') }}"></script>
+<script>
+  pollMpesaPayment({{ payment.id }}, {
+    successUrl: "{{ url_for('sales.receipt', sale_id=0) }}",
+    cancelUrl: "{{ url_for('sales.index') }}",
+    paymentType: "sale"
+  });
+</script>
+{% endblock %}

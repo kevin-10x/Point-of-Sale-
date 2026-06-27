@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Shop Users{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Shop Users</h1>
+  <p class="page-subtitle">Manage access and roles</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="glass-card">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem;">Add User</span>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('inventory.add_user') }}">
+          {{ form.hidden_tag() }}
+          <div class="mb-2">
+            <label class="form-label">Username</label>
+            {{ form.username(class="form-control", placeholder="Username") }}
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Email</label>
+            {{ form.email(class="form-control", placeholder="email@example.com") }}
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Password</label>
+            {{ form.password(class="form-control", placeholder="Secure password") }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            {{ form.role(class="form-select") }}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Create User</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="glass-card">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Username</th><th>Role</th><th>Email</th></tr></thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td class="fw-medium">{{ u.username }}</td>
+              <td>
+                <span class="badge {% if u.role == 'owner' %}bg-primary{% elif u.role == 'manager' %}bg-info{% else %}bg-secondary{% endif %}">
+                  {{ u.role }}
+                </span>
+              </td>
+              <td style="color:var(--text-secondary);">{{ u.email or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

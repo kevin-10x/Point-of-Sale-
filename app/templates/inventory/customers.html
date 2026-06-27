@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+{% block page_title %}Customers{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Customers</h1>
+  <p class="page-subtitle">Manage customer profiles and loyalty points</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="glass-card">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem;">Add Customer</span>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('inventory.add_customer') }}">
+          {{ form.hidden_tag() }}
+          <div class="mb-2">
+            <label class="form-label">Name</label>
+            {{ form.name(class="form-control", placeholder="Full name") }}
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Phone</label>
+            {{ form.phone(class="form-control", placeholder="07XXXXXXXX") }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            {{ form.email(class="form-control", placeholder="email@example.com") }}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm w-100">Add Customer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="glass-card">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Loyalty Pts</th></tr></thead>
+          <tbody>
+            {% for c in customers %}
+            <tr>
+              <td class="fw-medium">{{ c.name }}</td>
+              <td style="color:var(--text-secondary);">{{ c.phone or '—' }}</td>
+              <td style="color:var(--text-secondary);">{{ c.email or '—' }}</td>
+              <td>
+                <span class="badge bg-primary">{{ c.loyalty_points }} pts</span>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align:center; color:var(--text-muted); padding:3rem;">
+                No customers yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

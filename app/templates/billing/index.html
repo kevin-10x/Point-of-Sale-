@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Billing{% endblock %}
+{% block page_title %}Subscription & Billing{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Subscription & Billing</h1>
+  <p class="page-subtitle">Manage your plan via M-Pesa</p>
+</div>
+
+<!-- Current Status -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <div class="stat-label mb-2">Current Plan</div>
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;">
+          {{ shop.subscription_plan|capitalize }}
+        </div>
+        <div class="mb-2">
+          Status:
+          <span class="badge {% if shop.subscription_status == 'active' %}bg-success{% elif shop.subscription_status == 'trial' %}bg-info{% else %}bg-warning{% endif %}">
+            {{ shop.subscription_status }}
+          </span>
+        </div>
+        {% if shop.subscription_expires_at %}
+        <div style="font-size:0.8rem; color:var(--text-muted);">
+          Expires: {{ shop.subscription_expires_at.strftime('%d %b %Y') }}
+        </div>
+        {% endif %}
+        {% if not mpesa_enabled %}
+        <div class="alert alert-warning mt-3" style="font-size:0.8rem;">
+          ⚠️ M-Pesa live mode off — payments are simulated.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="row g-3">
+      {% for key, plan in plans.items() %}
+      <div class="col-md-4">
+        <div class="plan-card {% if shop.subscription_plan == key %}featured{% endif %}">
+          {% if shop.subscription_plan == key %}
+          <div style="font-size:0.65rem; color:var(--neon-blue); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem;">
+            ✓ Current Plan
+          </div>
+          {% endif %}
+          <div style="font-weight:700; font-size:0.95rem; margin-bottom:0.25rem;">{{ plan.name }}</div>
+          <div class="plan-price mb-3">{{ plan.label }}</div>
+          <form method="post" action="{{ url_for('billing.subscribe') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="plan" value="{{ key }}">
+            <div class="mb-2">
+              <input type="tel" name="phone" class="form-control form-control-sm"
+                     placeholder="M-Pesa phone" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm w-100">Pay with M-Pesa</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Payment History -->
+<div class="glass-card">
+  <div class="card-header">
+    <span style="font-weight:600; font-size:0.875rem;">Payment History</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead>
+      <tbody>
+        {% for p in recent_payments %}
+        <tr>
+          <td style="color:var(--text-secondary); font-size:0.82rem;">{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ p.subscription_plan }}</td>
+          <td style="font-weight:600;">KSh {{ "{:,.0f}".format(p.amount) }}</td>
+          <td>
+            <span class="badge {% if p.status == 'completed' %}bg-success{% elif p.status == 'failed' %}bg-danger{% else %}bg-warning{% endif %}">
+              {{ p.status }}
+            </span>
+          </td>
+          <td style="color:var(--text-muted); font-size:0.82rem;">{{ p.mpesa_receipt_number or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--text-muted); padding:3rem;">
+            No subscription payments yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

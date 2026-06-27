@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Sales{% endblock %}
+{% block page_title %}Point of Sale{% endblock %}
+{% block main_class %}page-content{% endblock %}
+
+{% block content %}
+<div class="pos-layout">
+  <!-- Products Panel -->
+  <div class="pos-products">
+    <!-- Search -->
+    <div class="glass-card mb-3" style="flex-shrink:0;">
+      <div class="card-body" style="padding:1rem;">
+        <div class="input-group">
+          <span class="input-group-text" style="background:rgba(255,255,255,0.04);border-color:var(--border-color);color:var(--text-muted);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input type="text" id="productSearch" class="form-control form-control-lg"
+                 placeholder="Search product name or scan barcode…" autocomplete="off">
+          <button class="btn btn-outline-secondary" type="button" id="clearSearch">Clear</button>
+        </div>
+        <div id="searchResults" class="list-group mt-2 search-results"></div>
+      </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="glass-card" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+      <div class="card-header">
+        <span style="font-weight:600; font-size:0.875rem; color:var(--text-secondary);">Products</span>
+      </div>
+      <div class="table-responsive" style="flex:1; overflow-y:auto;">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th style="width:80px;"></th>
+            </tr>
+          </thead>
+          <tbody id="productGrid">
+            {% for p in products %}
+            <tr>
+              <td>
+                <div class="fw-medium">{{ p.name }}</div>
+                {% if p.barcode %}<small style="color:var(--text-muted);">{{ p.barcode }}</small>{% endif %}
+              </td>
+              <td style="font-family:'Space Grotesk',sans-serif; font-weight:600;">
+                KSh {{ "{:,.0f}".format(p.selling_price) }}
+              </td>
+              <td>
+                {% if p.is_low_stock %}
+                <span class="badge bg-warning">{{ p.stock_quantity }}</span>
+                {% else %}
+                <span style="color:var(--text-secondary);">{{ p.stock_quantity }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <button class="btn btn-sm btn-primary add-product-btn" data-id="{{ p.id }}">Add</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Panel -->
+  <div class="pos-cart">
+    <div class="cart-panel">
+      <div class="cart-header">
+        <span class="cart-header-title">
+          🛒 Cart
+          {% if cart %}
+          <span class="badge bg-primary ms-1">{{ cart|length }}</span>
+          {% endif %}
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-danger" id="clearCartBtn">Clear</button>
+      </div>
+
+      <div class="cart-items">
+        <table class="table mb-0" id="cartTable">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cart %}
+            <tr data-product-id="{{ item.product_id }}">
+              <td style="font-size:0.82rem; max-width:110px;">{{ item.name }}</td>
+              <td>
+                <input type="number" class="form-control form-control-sm cart-qty"
+                       value="{{ item.quantity }}" min="1" max="{{ item.stock }}"
+                       style="width:60px; padding:0.25rem 0.4rem;">
+              </td>
+              <td style="font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.85rem; white-space:nowrap;">
+                KSh {{ "{:,.0f}".format(item.subtotal) }}
+              </td>
+              <td>
+                <button class="btn btn-sm remove-item"
+                        style="color:var(--neon-pink); padding:0.15rem 0.4rem; background:none; border:none;">×</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if not cart %}
+        <div style="padding:2rem 1.25rem; text-align:center; color:var(--text-muted); font-size:0.85rem;">
+          Cart is empty. Search or click Add to add products.
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="cart-footer">
+        <div class="cart-total-row">
+          <span class="cart-total-label">Total</span>
+          <span class="cart-total-amount">KSh {{ "{:,.0f}".format(cart_total) }}</span>
+        </div>
+
+        <form method="post" action="{{ url_for('sales.checkout') }}" id="checkoutForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <label class="form-label">Payment Method</label>
+            <select name="payment_method" class="form-select" id="paymentMethod">
+              <option value="cash">💵 Cash</option>
+              <option value="mpesa">📱 M-Pesa (STK Push)</option>
+              <option value="card">💳 Card</option>
+            </select>
+          </div>
+          <div class="mb-2" id="mpesaPhoneGroup" style="display:none;">
+            <label class="form-label">Customer M-Pesa Phone</label>
+            <input type="tel" name="mpesa_phone" class="form-control" placeholder="0712345678">
+            <div class="form-text">STK push sent to this number.</div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Discount (KSh)</label>
+            <input type="number" name="discount_amount" class="form-control" value="0" min="0" step="1">
+          </div>
+          {% if customers %}
+          <div class="mb-2">
+            <label class="form-label">Customer</label>
+            <select name="customer_id" class="form-select">
+              <option value="">— Walk-in —</option>
+              {% for c in customers %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          {% if branches %}
+          <div class="mb-2">
+            <label class="form-label">Branch</label>
+            <select name="branch_id" class="form-select">
+              {% for b in branches %}
+              <option value="{{ b.id }}">{{ b.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <button type="submit" class="btn btn-success w-100 btn-lg mt-1"
+                  id="checkoutBtn" {% if not cart %}disabled{% endif %}>
+            ✓ Complete Sale
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/sales.js') }}"></script>
+{% endblock %}

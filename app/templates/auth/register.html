@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Register Shop{% endblock %}
+{% block main_class %}auth-bg{% endblock %}
+
+{% block content %}
+<div class="auth-card auth-wide">
+  <div class="mb-4">
+    <div class="auth-logo">⚡ Nexus POS</div>
+    <p class="auth-tagline">Create a shop account and start selling in minutes.</p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} mb-3">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+
+    <p class="sidebar-section-label mb-3">Shop Details</p>
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6">
+        {{ form.shop_name.label(class="form-label") }}
+        {{ form.shop_name(class="form-control") }}
+      </div>
+      <div class="col-sm-6">
+        {{ form.shop_phone.label(class="form-label") }}
+        {{ form.shop_phone(class="form-control") }}
+      </div>
+      <div class="col-sm-6">
+        {{ form.shop_email.label(class="form-label") }}
+        {{ form.shop_email(class="form-control") }}
+      </div>
+      <div class="col-sm-6">
+        {{ form.shop_address.label(class="form-label") }}
+        {{ form.shop_address(class="form-control") }}
+      </div>
+    </div>
+
+    <p class="sidebar-section-label mb-3">Owner Account</p>
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control") }}
+      </div>
+      <div class="col-sm-4">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control") }}
+      </div>
+      <div class="col-sm-4">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control") }}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Create Shop</button>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">Back to Login</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

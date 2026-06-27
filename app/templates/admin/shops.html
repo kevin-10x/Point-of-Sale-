@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Platform Admin{% endblock %}
+{% block page_title %}Platform Administration{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Platform Administration</h1>
+  <p class="page-subtitle">Manage all registered shops</p>
+</div>
+
+<!-- Platform Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card blue">
+      <div class="stat-icon blue">🏪</div>
+      <div class="stat-label">Total Shops</div>
+      <div class="stat-value">{{ total_shops }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card green">
+      <div class="stat-icon green">✅</div>
+      <div class="stat-label">Active Shops</div>
+      <div class="stat-value">{{ active_shops }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card purple">
+      <div class="stat-icon purple">👥</div>
+      <div class="stat-label">Total Users</div>
+      <div class="stat-value">{{ total_users }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card orange">
+      <div class="stat-icon orange">💰</div>
+      <div class="stat-label">Platform Revenue</div>
+      <div class="stat-value" style="font-size:1.2rem;">KSh {{ "{:,.0f}".format(platform_revenue) }}</div>
+      <div class="stat-sub">{{ total_sales }} transactions</div>
+    </div>
+  </div>
+</div>
+
+<!-- Shops Table -->
+<div class="glass-card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Shop</th>
+          <th>Contact</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th>Active</th>
+          <th>Created</th>
+          <th style="min-width:260px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shop in shops %}
+        <tr>
+          <td class="fw-medium">{{ shop.name }}</td>
+          <td style="font-size:0.8rem; color:var(--text-secondary);">
+            {{ shop.email or '—' }}<br>{{ shop.phone or '' }}
+          </td>
+          <td><span class="badge bg-primary">{{ shop.subscription_plan }}</span></td>
+          <td><span class="badge bg-secondary">{{ shop.subscription_status }}</span></td>
+          <td>
+            {% if shop.is_active %}
+            <span class="badge bg-success">Active</span>
+            {% else %}
+            <span class="badge bg-danger">Suspended</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">{{ shop.created_at.strftime('%Y-%m-%d') }}</td>
+          <td>
+            <div class="d-flex flex-wrap gap-1 align-items-center">
+              <form method="post" action="{{ url_for('admin.toggle_shop', shop_id=shop.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-sm btn-outline-secondary">
+                  {{ 'Suspend' if shop.is_active else 'Activate' }}
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('admin.update_subscription', shop_id=shop.id) }}" class="d-inline-flex gap-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="subscription_plan" class="form-select form-select-sm" style="width:auto;">
+                  <option value="starter" {% if shop.subscription_plan == 'starter' %}selected{% endif %}>Starter</option>
+                  <option value="standard" {% if shop.subscription_plan == 'standard' %}selected{% endif %}>Standard</option>
+                  <option value="premium" {% if shop.subscription_plan == 'premium' %}selected{% endif %}>Premium</option>
+                </select>
+                <select name="subscription_status" class="form-select form-select-sm" style="width:auto;">
+                  <option value="trial" {% if shop.subscription_status == 'trial' %}selected{% endif %}>Trial</option>
+                  <option value="active" {% if shop.subscription_status == 'active' %}selected{% endif %}>Active</option>
+                  <option value="expired" {% if shop.subscription_status == 'expired' %}selected{% endif %}>Expired</option>
+                </select>
+                <button class="btn btn-sm btn-primary">Update</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center; color:var(--text-muted); padding:3rem;">
+            No shops registered yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

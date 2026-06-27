@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">{{ title }}</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="glass-card">
+      <div class="card-body" style="padding:1.75rem;">
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+          <div class="row g-3">
+            <div class="col-md-8">
+              {{ form.name.label(class="form-label") }}
+              {{ form.name(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+              {{ form.barcode.label(class="form-label") }}
+              {{ form.barcode(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+              {{ form.category_id.label(class="form-label") }}
+              {{ form.category_id(class="form-select") }}
+            </div>
+            <div class="col-md-3">
+              {{ form.buying_price.label(class="form-label") }}
+              {{ form.buying_price(class="form-control", step="0.01") }}
+            </div>
+            <div class="col-md-3">
+              {{ form.selling_price.label(class="form-label") }}
+              {{ form.selling_price(class="form-control", step="0.01") }}
+            </div>
+            <div class="col-md-4">
+              {{ form.stock_quantity.label(class="form-label") }}
+              {{ form.stock_quantity(class="form-control") }}
+            </div>
+            <div class="col-md-4">
+              {{ form.low_stock_threshold.label(class="form-label") }}
+              {{ form.low_stock_threshold(class="form-control") }}
+            </div>
+          </div>
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save Product</button>
+            <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

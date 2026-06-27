@@ -3,6 +3,7 @@
 import json
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from flask import current_app
 
@@ -133,35 +134,53 @@ def initiate_subscription_payment(shop_id, user_id, phone, plan: str) -> MpesaPa
     return payment
 
 
-def finalize_payment(payment: MpesaPayment):
+def finalize_payment(payment: MpesaPayment) -> Optional[int]:
+    """Create sale or activate subscription for a completed payment.
+
+    NOTE: Caller is responsible for the final commit.
+    """
     if payment.status == "completed":
         if payment.payment_type == "sale" and payment.sale_id:
             return payment.sale_id
-        if payment.payment_type == "subscription":
-            return None
+        if payment.payment_type == "subscription" and payment.sale_id is None:
+            # Already completed subscription — nothing more to do
+            if payment.payment_type == "subscription":
+                return None
 
     if payment.payment_type == "sale":
         cart = json.loads(payment.cart_json or "[]")
-        sale = create_sale_from_cart(
-            cart_items=cart,
-            cashier_id=payment.cashier_id,
-            shop_id=payment.shop_id,
-            payment_method="mpesa",
-            discount_amount=payment.discount_amount or 0,
-            customer_id=payment.customer_id,
-            branch_id=payment.branch_id,
-            notes=payment.notes,
-            mpesa_receipt_number=payment.mpesa_receipt_number,
-        )
-        payment.sale_id = sale.id
+        if not cart:
+            logger.warning("finalize_payment: empty cart for payment %s", payment.id)
+            return None
+        try:
+            sale = create_sale_from_cart(
+                cart_items=cart,
+                cashier_id=payment.cashier_id,
+                shop_id=payment.shop_id,
+                payment_method="mpesa",
+                discount_amount=payment.discount_amount or 0,
+                customer_id=payment.customer_id,
+                branch_id=payment.branch_id,
+                notes=payment.notes,
+                mpesa_receipt_number=payment.mpesa_receipt_number,
+            )
+            payment.sale_id = sale.id
+            return sale.id
+        except ValueError as e:
+            logger.error("finalize_payment sale creation failed: %s", e)
+            payment.status = "failed"
+            payment.result_desc = str(e)
+            db.session.commit()
+            return None
+
     elif payment.payment_type == "subscription":
         shop = db.session.get(Shop, payment.shop_id)
         if shop and payment.subscription_plan:
             shop.subscription_plan = payment.subscription_plan
             shop.subscription_status = "active"
             days = current_app.config.get("SUBSCRIPTION_PERIOD_DAYS", 30)
-            base = shop.subscription_expires_at
             now = datetime.now(timezone.utc)
+            base = shop.subscription_expires_at
             if base and base > now:
                 shop.subscription_expires_at = base + timedelta(days=days)
             else:
@@ -170,11 +189,10 @@ def finalize_payment(payment: MpesaPayment):
     payment.status = "completed"
     if not payment.completed_at:
         payment.completed_at = datetime.now(timezone.utc)
-    db.session.commit()
     return payment.sale_id
 
 
-def process_stk_callback(payload: dict) -> MpesaPayment | None:
+def process_stk_callback(payload: dict) -> Optional[MpesaPayment]:
     body = payload.get("Body", {})
     stk = body.get("stkCallback", {})
     checkout_id = stk.get("CheckoutRequestID")
@@ -199,6 +217,7 @@ def process_stk_callback(payload: dict) -> MpesaPayment | None:
         payment.status = "completed"
         payment.completed_at = datetime.now(timezone.utc)
         finalize_payment(payment)
+        db.session.commit()
     else:
         payment.status = "failed"
         db.session.commit()
@@ -226,6 +245,7 @@ def query_payment_status(payment: MpesaPayment) -> MpesaPayment:
             payment.mpesa_receipt_number = result.get("MpesaReceiptNumber") or payment.mpesa_receipt_number
             payment.completed_at = datetime.now(timezone.utc)
             finalize_payment(payment)
+            db.session.commit()
         elif result_code and str(result_code) != "1032":
             payment.status = "failed"
             payment.result_desc = result.get("ResultDesc")

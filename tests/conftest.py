@@ -1,34 +1,38 @@
 import re
+import uuid
 
 import pytest
 from sqlalchemy.pool import StaticPool
 
 from app import create_app
-from app.extensions import db
+from app.extensions import db as _db
 
 CSRF_RE = re.compile(r'name="csrf_token"[^>]*value="([^"]+)"')
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def app():
-    app = create_app()
-    app.config.update(
+    """Function-scoped app with fresh in-memory SQLite for each test."""
+    application = create_app()
+    application.config.update(
         {
             "TESTING": True,
-            "SQLALCHEMY_DATABASE_URI": "sqlite://",
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
             "SQLALCHEMY_ENGINE_OPTIONS": {
                 "connect_args": {"check_same_thread": False},
                 "poolclass": StaticPool,
             },
             "WTF_CSRF_ENABLED": True,
             "MPESA_ENABLED": False,
+            "SECRET_KEY": "test-secret-key",
+            "SERVER_NAME": None,
         }
     )
-    with app.app_context():
-        db.create_all()
-        yield app
-        db.session.remove()
-        db.drop_all()
+    with application.app_context():
+        _db.create_all()
+        yield application
+        _db.session.remove()
+        _db.drop_all()
 
 
 @pytest.fixture
@@ -39,6 +43,7 @@ def client(app):
 def _csrf(client, path="/login"):
     r = client.get(path)
     m = CSRF_RE.search(r.data.decode())
+    assert m, f"No CSRF token found at {path}"
     return m.group(1)
 
 
@@ -53,34 +58,47 @@ def _login(client, username, password):
 
 @pytest.fixture
 def seeded(app):
+    """Create a shop with owner, cashier, branch, and one product."""
     from app.models import Branch, Category, Product, Shop, User
 
-    shop = Shop(name="Test Shop", subscription_status="active")
-    db.session.add(shop)
-    db.session.flush()
+    # Use unique suffix per fixture call to avoid username conflicts
+    suffix = uuid.uuid4().hex[:6]
+
+    shop = Shop(name=f"Test Shop {suffix}", subscription_status="active")
+    _db.session.add(shop)
+    _db.session.flush()
 
     branch = Branch(shop_id=shop.id, name="Main")
-    db.session.add(branch)
+    _db.session.add(branch)
 
-    owner = User(shop_id=shop.id, username="owner", role="owner")
+    owner = User(shop_id=shop.id, username=f"owner_{suffix}", role="owner")
     owner.set_password("pass123")
-    cashier = User(shop_id=shop.id, username="cashier", role="cashier")
+    cashier = User(shop_id=shop.id, username=f"cashier_{suffix}", role="cashier")
     cashier.set_password("pass123")
-    db.session.add_all([owner, cashier])
+    _db.session.add_all([owner, cashier])
 
     cat = Category(shop_id=shop.id, name="Groceries")
-    db.session.add(cat)
-    db.session.flush()
+    _db.session.add(cat)
+    _db.session.flush()
 
     product = Product(
         shop_id=shop.id,
         category_id=cat.id,
         name="Milk",
-        barcode="9001",
+        barcode=f"9001{suffix}",
         buying_price=45,
         selling_price=60,
         stock_quantity=50,
     )
-    db.session.add(product)
-    db.session.commit()
-    return {"shop": shop, "product": product, "owner": owner}
+    _db.session.add(product)
+    _db.session.commit()
+
+    return {
+        "shop": shop,
+        "product": product,
+        "owner": owner,
+        "owner_name": owner.username,
+        "cashier": cashier,
+        "cashier_name": cashier.username,
+        "branch": branch,
+    }

@@ -1,17 +1,30 @@
-FROM python:3.12-slim
+FROM python:3.12-slim AS base
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev gcc curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc \
-    && rm -rf /var/lib/apt/lists/*
-
+# Install Python dependencies first (layer cache)
 COPY requirements.txt requirements-docker.txt ./
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-docker.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt -r requirements-docker.txt
 
+# Copy application source
 COPY . .
 
-ENV FLASK_APP=run.py
+# Environment
+ENV FLASK_APP=run.py \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-5000}/health || exit 1
+
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "run:app"]
+# Entrypoint: init DB then start gunicorn
+CMD ["sh", "-c", "flask init-db && gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 --access-logfile - run:app"]

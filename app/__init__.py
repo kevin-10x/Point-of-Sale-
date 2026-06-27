@@ -52,4 +52,14 @@ def create_app(config_class=Config):
 
         return {"current_user": current_user}
 
+    # Health check endpoint for load balancers / Docker / Railway
+    @app.route("/health")
+    def health():
+        from flask import jsonify
+        try:
+            db.session.execute(db.text("SELECT 1"))
+            return jsonify({"status": "ok", "database": "connected"}), 200
+        except Exception as e:
+            return jsonify({"status": "error", "database": str(e)}), 503
+
     return app

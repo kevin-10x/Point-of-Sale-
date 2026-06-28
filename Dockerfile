@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY . .
 
 # Environment
-ENV FLASK_APP=run.py \
+ENV FLASK_APP=wsgi:app \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
@@ -27,4 +27,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 EXPOSE 5000
 
 # Entrypoint: init DB then start gunicorn
-CMD ["sh", "-c", "flask init-db && gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 --access-logfile - run:app"]
+CMD ["sh", "-c", "flask init-db && gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 --access-logfile - wsgi:app"]

@@ -4,7 +4,7 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "flask init-db && gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 run:app",
+    "startCommand": "flask init-db && gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 wsgi:app",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",

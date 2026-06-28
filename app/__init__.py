@@ -62,4 +62,8 @@ def create_app(config_class=Config):
         except Exception as e:
             return jsonify({"status": "error", "database": str(e)}), 503
 
+    # Auto-create the SQL tables in Supabase if they are missing
+    with app.app_context():
+        db.create_all()
+
     return app

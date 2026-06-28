@@ -8,13 +8,22 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # 1. Fetch the Supabase URL injected by Vercel, or look for DATABASE_URL, fallback to SQLite locally
-    _db_url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+    # 1. Fetch a non-pooling URL if available, fallback to POSTGRES_URL or DATABASE_URL
+    _db_url = (
+        os.environ.get("POSTGRES_URL_NON_POOLING") 
+        or os.environ.get("POSTGRES_URL") 
+        or os.environ.get("DATABASE_URL")
+    )
     
     if _db_url:
+        # Strip trailing connection pool options (like ?supa=...) that break psycopg2
+        if "?" in _db_url:
+            _db_url = _db_url.split("?")[0]
+            
         # SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
         if _db_url.startswith("postgres://"):
             _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+            
         SQLALCHEMY_DATABASE_URI = _db_url
     else:
         SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'database.db')}"

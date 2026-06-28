@@ -7,14 +7,18 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL",
-        f"sqlite:///{os.path.join(basedir, 'database.db')}",
-    )
-    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
-        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace(
-            "postgres://", "postgresql://", 1
-        )
+    
+    # 1. Fetch the Supabase URL injected by Vercel, or look for DATABASE_URL, fallback to SQLite locally
+    _db_url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+    
+    if _db_url:
+        # SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
+        if _db_url.startswith("postgres://"):
+            _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+        SQLALCHEMY_DATABASE_URI = _db_url
+    else:
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'database.db')}"
+
     PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
     WTF_CSRF_ENABLED = True
 

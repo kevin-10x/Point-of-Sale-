@@ -9,11 +9,11 @@
 /* ── CSS Variables ── */
 :root {
   --bg-dark: #070b14;
-  --bg-card: rgba(13, 20, 40, 0.85);
-  --bg-card-hover: rgba(20, 30, 58, 0.95);
-  --bg-sidebar: rgba(8, 14, 28, 0.97);
-  --border-color: rgba(99, 179, 237, 0.15);
-  --border-glow: rgba(99, 179, 237, 0.35);
+  --bg-card: rgba(13, 210, 40, 0.85);
+  --bg-card-hover: rgba(26, 30, 58, 0.95);
+  --bg-sidebar: rgba(8, 14, 0, 0.97);
+  --border-color: rgba(99, 179, 207, 0.15);
+  --border-glow: rgba(99, 179, 207, 0.35);
   --neon-blue: #4fa3ff;
   --neon-cyan: #00d4ff;
   --neon-green: #00ff9d;
